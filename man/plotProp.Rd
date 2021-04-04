@@ -2,10 +2,27 @@
 % Please edit documentation in R/sars2phylo.R
 \name{plotProp}
 \alias{plotProp}
-\title{plot proportion by time interval with 95% CI}
+\title{plot proportion by time interval with 95 percent CI}
 \usage{
 plotProp(SS, lineage, timeInt, smoother = FALSE, logreg = FALSE)
 }
+\arguments{
+\item{SS}{dataframe of sample set, with one-hot encoding of each lineage as a column}
+
+\item{lineage}{character string of particular lineage}
+
+\item{timeInt}{time interval, usually weekly ("epidate")}
+
+\item{smoother}{display loess smoother}
+
+\item{logreg}{display logistic regression smoother}
+}
+\value{
+creates a plot of proportion of lineage by time interval
+}
 \description{
-plot proportion by time interval with 95% CI
+plot proportion by time interval with 95 percent CI
+}
+\examples{
+plotProp(ss, "B.1.1.7", "epidate");
 }

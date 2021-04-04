@@ -313,7 +313,17 @@ logRegFit <- function(SS, START){
   var_model_df
 }
 
-#' plot proportion by time interval with 95% CI
+#' plot proportion by time interval with 95 percent CI
+#' @param SS dataframe of sample set, with one-hot encoding of each lineage as a column
+#' @param lineage character string of particular lineage
+#' @param timeInt time interval, usually weekly ("epidate")
+#' @param smoother display loess smoother
+#' @param logreg display logistic regression smoother
+#' @return creates a plot of proportion of lineage by time interval
+#' @examples 
+#' plotProp(ss, "B.1.1.7", "epidate");
+#' @export
+#' 
 
 plotProp <- function(SS, lineage, timeInt, smoother = FALSE, logreg = FALSE){
   l_int <- SS %>% 
