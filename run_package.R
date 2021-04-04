@@ -1,6 +1,5 @@
 library(devtools)
 library(roxygen2)
-roxygenise("~/Dropbox/COVID/sars2phylo")
+#roxygenise("~/Dropbox/COVID/sars2phylo")
 
-library(sars2phylo)
-
+install_github("jacoblemieux/sars2phylo");
