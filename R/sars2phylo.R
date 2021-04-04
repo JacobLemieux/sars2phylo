@@ -400,7 +400,7 @@ plotVOC <- function(SS, timeInt, smoother = FALSE, ggtit){
     filter(Date > "2020-10-31") %>% 
     group_by(.data[[timeInt]]) %>% 
     summarise(Lin1 = sum(.data[["B.1.1.7"]], na.rm=T),Lin2 = sum(.data[["B.1.351"]], na.rm=T), Lin3 = sum(.data[["P.1"]], na.rm=T), 
-              All_Other = n() - (sum(.data[["B.1.1.7"]], na.rm=T) + sum(.data[["B.1.351"]], na.rm=T) + sum(.data[["P.1"]], na.rm=T)))
+              All_Other = n(na.rm=T) - (sum(.data[["B.1.1.7"]], na.rm=T) + sum(.data[["B.1.351"]], na.rm=T) + sum(.data[["P.1"]], na.rm=T)))
   print(names(l_int))
   names(l_int)[2:4] <- c("B.1.1.7", "B.1.351", "P.1")
   l_long <- pivot_longer(l_int, cols = c(All_Other, B.1.1.7, B.1.351, P.1), names_to = "Type", values_to = "Counts")
