@@ -19,9 +19,10 @@ readSampleSet <- function(nextclade_csv, ss_metadata){
   names(SS_meta) <- c("seqName", "Date", "pango_lineage")
   SS_meta$Date <- ymd(SS_meta$Date)
   SS <- readNextClade("~/Dropbox/COVID/regional/data/", nextclade_csv)
-  SS$seqName <- sapply(str_split(SS$seqName, "202[01]-"), function(x) x[[1]][1])
+  #SS$seqName <- sapply(str_split(SS$seqName, "202[01]-"), function(x) x[[1]][1])
+  SS_meta$seqName <- gsub("hCoV-19/", "", SS_meta$seqName)
   SS <- left_join(SS, SS_meta, by = "seqName")
-  SS$state <- substr(SS$seqName, 13,14)
+  SS$state <- substr(SS$seqName, 5,6)
   SS$Sgeno <- sapply(SS$aaSubstitutions, extractS) # parse nextclade format to extract S genotype
   SS$epiweek <- epiweek(SS$Date)
   SS <- SS %>% mutate(month = month(Date)) %>%
