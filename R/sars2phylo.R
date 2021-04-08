@@ -14,8 +14,7 @@
 
 readSampleSet <- function(nextclade_csv, ss_metadata){
   SS_meta <- read_tsv(ss_metadata)
-  names(SS_meta)[c(1,4,12)] <- c("seqName", "date", "pango_lineage")
-  SS_meta <- SS_meta[,c("seqName", "date", "pango_lineage")]
+  SS_meta <- SS_meta[,c("strain", "date", "pango_lineage")]
   names(SS_meta) <- c("seqName", "Date", "pango_lineage")
   SS_meta$Date <- ymd(SS_meta$Date)
   SS <- readNextClade("~/Dropbox/COVID/regional/data/", nextclade_csv)
