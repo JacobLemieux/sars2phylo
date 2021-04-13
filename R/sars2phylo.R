@@ -45,8 +45,7 @@ readSampleSet <- function(nextclade_csv, ss_metadata){
 #' 
 readTerra <- function(terra_csv){
   SS_meta <- read_tsv(terra_csv)
-  names(SS_meta)[c(1,12,27, 32)] <- c("seqName", "date", "pango_lineage", "purpose_of_sequencing")
-  SS_meta <- SS_meta[,c("seqName", "date", "pango_lineage", "purpose_of_sequencing")]
+  SS_meta <- SS_meta[,c("entity:assemblies_id", "collection_date", "pango_lineage", "purpose_of_sequencing")]
   names(SS_meta) <- c("seqName", "Date", "pango_lineage", "purpose_of_sequencing")
   SS_meta$ctl <- ifelse(substr(SS_meta$seqName, 5, 7) == "H2O" | substr(SS_meta$seqName, 1, 3) == "H2O", TRUE, FALSE)
   SS_meta <- SS_meta %>% filter(ctl == FALSE)
@@ -191,7 +190,53 @@ encodeGenotype <- function(SS, spike = FALSE, smallversion=TRUE, N = 100){
   SS
 }
 
+#' encode S genotype as columns using one-hot encoding
+#'
+#' @param SS dataframe of sample set
+#' @param spike restrict analysis only to Spike gene
+#' @param smallversion if true, limit number of genotypes to N
+#' @param N limits number of genotypes encoded 
+#' @return dataframe augmented with columns as one-hot encoded genotypes
+#' @examples 
+#' ss <- encodeGenotype(ss);
+#' @export
+#' 
 
+encodeSgeno <- function(SS, spike = FALSE, smallversion=TRUE, N = 100){
+  genos <- Reduce(union, str_split(SS$Sgeno, ","))
+  genos <- genos[!is.na(genos)]
+  if(spike == TRUE){
+    genos <- genos[grep("S:", genos)]
+  }
+  for(i in 1:length(genos)){
+    new_col_index <- ncol(SS) + 1
+    SS[,new_col_index] <- 0
+    SS[grep(genos[i], SS$Sgeno),new_col_index] <- 1
+    colnames(SS)[new_col_index] <- genos[i]
+    if(smallversion == TRUE){
+      if(i > N){
+        break
+      }
+    }
+    print(i)
+  }
+  SS
+}
+
+#' create a table of genotypes in a lineage
+#'
+#' @param SS dataframe of sample set, must have columns seqName and Sgeno
+#' @return vector of frequencies
+#' @examples 
+#' linTable <- createSgenotTable(ss);
+#' @export
+#' 
+
+createSgenoTable <- function(SS){
+  genotab <- encodeSgeno(SS[,c("seqName", "Sgeno")])
+  genoFreqs <- apply(genotab[,-c(1:2)],2,sum) / nrow(genotab)
+  round(genoFreqs, 3)
+}
 
 #' one-hot encoding lineage as binary outcome, as augmented columns
 #'
