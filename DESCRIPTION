@@ -4,4 +4,4 @@ Type: Package
 Title: Functions for analyzing SARS-CoV-2 phylogenetic data
 Version: 0.0.1.0
 RoxygenNote: 7.1.1
-Imports: tidyverse, ggplot2, mltools, aweek, lubridate, dplyr, purrr, data.table, readr
+Imports: tidyverse, ggplot2, mltools, aweek, lubridate, dplyr, purrr, data.table

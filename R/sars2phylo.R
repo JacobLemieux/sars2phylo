@@ -3,7 +3,6 @@
 #' @import mltools
 #' @import aweek
 #' @import lubridate
-#' @import readr
 #' @import data.table
 #' @import dplyr
 #' @import purrr
