@@ -2,6 +2,12 @@
 # February 28 2021
 # lemieux@broadinstitute.org
 
+#' @import tidyverse
+#' @import ggplot2
+#' @import mltools
+#' @import aweek
+#' @import lubridate
+
 #' read sample set and merge metadata
 #'
 #' Read a sample set from a combination of nextclade and gisaid metadata
