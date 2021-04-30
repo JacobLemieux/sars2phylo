@@ -102,6 +102,20 @@ extractS <- function(mutlist){
   paste(splitlist[grep("S:", splitlist)], collapse=",")
 }
 
+#' extract S haplotypes from a list of mutations (e.g. called by nextclade)
+#'
+#' @param mutlist comma-separated vector
+#' @return S haplotype
+#' @export
+#' 
+
+
+extractS2 <- function(mutlist){
+  splitlist <- strsplit(mutlist, ",")[[1]]
+  paste(splitlist[grep("Spike_", splitlist)], collapse=",")
+}
+
+
 #' convert month to sequential month (jmonth) and week to sequential week (jweek):
 #'
 #' @param SS dataframe of sample set, including SS$week and SS$month as columns
@@ -228,6 +242,40 @@ encodeSgeno <- function(SS, spike = FALSE, smallversion=TRUE, N = 100){
   }
   SS
 }
+
+#' v2 encode S genotype as columns using one-hot encoding
+#'
+#' @param SS dataframe of sample set
+#' @param spike restrict analysis only to Spike gene
+#' @param smallversion if true, limit number of genotypes to N
+#' @param N limits number of genotypes encoded 
+#' @return dataframe augmented with columns as one-hot encoded genotypes
+#' @examples 
+#' ss <- encodeGenotype(ss);
+#' @export
+#' 
+
+encodeSgeno2 <- function(SS, spike = FALSE, smallversion=TRUE, N = 100){
+  genos <- Reduce(union, str_split(SS$AAsubstitutions, ","))
+  genos <- genos[!is.na(genos)]
+  if(spike == TRUE){
+    genos <- genos[grep("Spike_", genos)]
+  }
+  for(i in 1:length(genos)){
+    new_col_index <- ncol(SS) + 1
+    SS[,new_col_index] <- 0
+    SS[grep(genos[i], SS$AAsubstitutions),new_col_index] <- 1
+    colnames(SS)[new_col_index] <- genos[i]
+    if(smallversion == TRUE){
+      if(i > N){
+        break
+      }
+    }
+    print(i)
+  }
+  SS
+}
+
 
 #' create a table of genotypes in a lineage
 #'
@@ -414,6 +462,57 @@ plotProp <- function(SS, lineage, timeInt, smoother = FALSE, logreg = FALSE){
 #' @export
 #' 
 
+#' plot proportions for sums of multiple lineages by time interval with 95 percent CI
+#' @param SS dataframe of sample set, with one-hot encoding of each lineage as a column
+#' @param lineage character string of particular lineage
+#' @param timeInt time interval, usually weekly ("epidate")
+#' @param smoother display loess smoother
+#' @param logreg display logistic regression smoother
+#' @return creates a plot of proportion of lineage by time interval
+#' @examples 
+#' plotProp(ss, "B.1.1.7", "epidate");
+#' @export
+#' 
+
+plotProps <- function(SS, lin1, lin2, lin3, timeInt, smoother = FALSE, logreg = FALSE){
+  l_int <- SS %>% 
+    filter(Date > "2020-10-31") %>% 
+    group_by(.data[[timeInt]]) %>% 
+    summarise(Proportion = mean(.data[[lin1]] + .data[[lin2]] + .data[[lin3]], na.rm=T), K= sum(.data[[lin1]] + .data[[lin2]] + .data[[lin3]], na.rm=T), N = n())
+  l_int$LowerCI <- BinomCI(l_int$K, l_int$N)[,2]
+  l_int$UpperCI <- BinomCI(l_int$K, l_int$N)[,3]
+  pp <- ggplot(l_int, aes(x = .data[[timeInt]], y = Proportion)) + 
+    geom_point() + 
+    geom_errorbar(aes(ymin = LowerCI, ymax = UpperCI), alpha = 0.5) + 
+    theme_bw() + 
+    ggtitle(paste(lin1, lin2, lin3, sep="+")) + 
+    xlab("Date")  
+  if(smoother == TRUE){
+    pp <- pp + geom_smooth(method = "loess", span = 2)
+  }
+  if(logreg == TRUE){
+    alphapoint = 0.5
+    alphaline = 0.5
+    alphashade = 0.15
+    pp <- pp +
+      geom_line(method = "glm",method.args=list(family="binomial"), alpha = alphaline, fullrange=TRUE, stat="smooth") #+ 
+    #stat_smooth(method = "glm",method.args=list(family="binomial"), alpha = alphashade, fullrange=TRUE, size = 0)
+  }
+  pp
+}
+
+#' plot absolute counts by timeInt
+#' @param SS dataframe of sample set, with one-hot encoding of each lineage as a column
+#' @param lineage character string of particular lineage
+#' @param timeInt time interval, usually weekly ("epidate")
+#' @param smoother display loess smoother
+#' @return creates a plot of proportion of lineage by time interval
+#' @examples 
+#' plotCounts(ss, "B.1.1.7", "epidate");
+#' @export
+#' 
+
+
 plotCounts <- function(SS, lineage, timeInt, smoother = FALSE){
   xlims <- ymd(c("2020-10-25", "2021-04-05"))
   l_int <- SS %>% 
@@ -455,6 +554,39 @@ plotVOC <- function(SS, timeInt, smoother = FALSE, ggtit){
   print(names(l_int))
   names(l_int)[2:4] <- c("B.1.1.7", "B.1.351", "P.1")
   l_long <- pivot_longer(l_int, cols = c(All_Other, B.1.1.7, B.1.351, P.1), names_to = "Type", values_to = "Counts")
+  l_long$Counts[l_long$Counts == 0] <- NA
+  pp <- ggplot(l_long, aes(x = .data[[timeInt]], y = Counts, color = Type, fill = Type)) + 
+    geom_bar(stat = "identity") + 
+    theme_bw() + 
+    ggtitle(ggtit) + 
+    xlab("Date")
+  if(smoother == TRUE){
+    pp <- pp + geom_smooth(method = "loess", span = 2)
+  }
+  pp
+}
+#' plot variants of concern and interest (B.1.1.7, B.1.351, P.1, B.1.526)
+#' @param SS dataframe of sample set, with one-hot encoding of each lineage as a column
+#' @param timeInt time interval, usually weekly ("epidate")
+#' @param smoother display loess smoother
+#' @param ggtit title for graph
+#' @return creates a plot of absolute counts by lineage by week
+#' @examples 
+#' plotVOC(ss, "B.1.1.7", "epidate", "VOC by Week");
+#' @export
+#' 
+
+plotVOI <- function(SS, timeInt, smoother = FALSE, ggtit){
+  l_int <- SS %>% 
+    filter(Date > "2020-10-31") %>% 
+    group_by(.data[[timeInt]]) %>% 
+    summarise(Lin1 = sum(.data[["B.1.1.7"]], na.rm=T),Lin2 = sum(.data[["B.1.351"]], na.rm=T), Lin3 = sum(.data[["P.1"]], na.rm=T), 
+              Lin4 = sum(.data[["B.1.526"]], na.rm=T), Lin5 = sum(.data[["B.1.526.1"]], na.rm=T), Lin6 = sum(.data[["B.1.526.2"]], na.rm=T), 
+              All_Other = n() - ((sum(.data[["B.1.1.7"]], na.rm=T) + sum(.data[["B.1.351"]], na.rm=T) + sum(.data[["P.1"]], na.rm=T)) + 
+                                   sum(.data[["B.1.526"]], na.rm=T) +  sum(.data[["B.1.526.1"]], na.rm=T) + sum(.data[["B.1.526.2"]], na.rm=T)))
+  print(names(l_int))
+  names(l_int)[2:7] <- c("B.1.1.7", "B.1.351", "P.1", "B.1.526", "B.1.526.1", "B.1.526.2")
+  l_long <- pivot_longer(l_int, cols = c(All_Other, B.1.1.7, B.1.351, P.1, B.1.526, B.1.526.1, B.1.526.2), names_to = "Type", values_to = "Counts")
   l_long$Counts[l_long$Counts == 0] <- NA
   pp <- ggplot(l_long, aes(x = .data[[timeInt]], y = Counts, color = Type, fill = Type)) + 
     geom_bar(stat = "identity") + 
